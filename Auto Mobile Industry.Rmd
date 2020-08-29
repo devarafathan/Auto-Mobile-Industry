@@ -1,0 +1,155 @@
+---
+title: "Regression Model on Motor Trend"
+author: "Devara Izaz Fathan"
+date: "8/28/2020"
+output: pdf_document
+---
+
+# 1. Excecutive Summary
+In this assignment, we work for Motor Trend, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+
+1. Is an automatic or manual transmission better for MPG
+2. Quantify the MPG difference between automatic and manual transmissions
+
+# 2. Loading Data and Library
+The data set that we use in this project is from the : Henderson and Velleman (1981), Building multiple regression models interactively. Biometrics, 37, 391–411.
+We also need to assign some libraries that are useful for our analysis.
+
+```{r, echo=TRUE, results=FALSE}
+data(mtcars)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+```
+
+# 3. Exploratory Data Analysis
+First we look at the first lines of the data. We can is in the appendix 1
+
+Then we look at the structure of the data, we can is in the appendix 2
+
+The data contains 32 observations on 11 variables. The detailed variables translate is in appendix 4
+
+For summarizing the data the we are interested to, we need to look the distribution of the mpg and adjusting the am variable through the boxplot. We can look at the appendix 3. Based on this plot, we can see that mpg for manual transmission is higher than mpg for automatic transmission. We will look at the mean of mpg for the auto and manual transmission
+
+For further analysis, we have to take a look on the correlation of other variables with the pairs function. You can see in the appendix 5
+
+# 4. Regression Modelling
+## Model 1: Simple Model
+In Model 1, we only use variable mpg and am. We can see the
+
+```{r}
+model1 <- lm(mpg~am, mtcars)
+summary(model1)
+```
+Model 1 shows us that the value of the intercept(beta0) is the mean value of auto transmission and the coefficient(beta1) value means the increasing mpg value when using manual transmission. The R-squared value=0.3385, it means that am variable only give 33,85% proportion of variance to the mpg as the dependent variable. So we have to fit the data into another model. 
+
+## Model 2 : Initial Model
+In this model, we include all variables into the regression model. This is the result :
+
+```{r}
+model2 <- lm(mpg~., mtcars)
+summary(model2)
+```
+From the result above, we see that the coefficient for wt is very dominant. The increasing per 1 unit value of wt reduce -3.715 to the mpg value. Based on this, we can not use all of the variables on this data. If we use all of the data, we may have overfitting problem that our model will not give us nearly the real value. So we have to reduce the variables we will include in the data.
+
+## Model 3 : Best Model
+In this model, we will use step function in R to get best model automatically. This is taken care by the step method which runs lm multiple times to build multiple regression models and select the best variables from them using both forward selection and backward elimination methods by the AIC algorithm. The smaller the value of the AIC then better the model. For the detail tracing, we can see in the appendix.
+
+```{r}
+model3 <- step(model2, direction='both', trace=FALSE)
+summary(model3)
+```
+
+The model include wt, qsec, and am variable. The value of the intercept(beta0) when all of the independent is 0 is 9.6178. If we increase wt variable per one unit(1000 lbs), then the mpg will decrase -3.9165. Then if we increase the qsec per one unit(1 second) then the mpg will increase 1.2259. Last, if the transmission(am) is manual, the mpg value will increase  2.9358 from the automatic transmission.
+
+The R-squared value=0.8336, it means that am, qsec, and wt variable give 83.36% proportion of variance to the mpg as the dependent variable. So we can use it as our model because R squared is big enough to represent the result of the mpg value. Our adjusted R squared value in model 3 close to the Multiple R squared. Thus we can use model 3 as our regression model for this project. 
+
+To evaluate the inference, we need to see the p value for all of the independent variables. All of the p values are less than 0.05, so we can say that all of the variables reject the null hypothesis that there is no relationship between the mpg and each variables. Therefore, we an look the confident interval of the variables.
+```{r}
+confint.lm(model3)
+```
+
+# 5. Diagnostics and Residuals
+For this analysis, the plot is shown in the appendix 6
+
+- The Residuals vs Fitted plot, the points are randomly plotted, so there is no systematic error such heteroscedasticity.
+- In the Normal Q-Q plot, we see that the point is located in the normal line. So the residuals are normally distributed.
+- The Scale-Location plot consists of points located in a constant nearly constant line pattern, indicating constant variance.
+- Based on the Residuals vs Leverage plot, we can see that there are no point outside the cook distance's, so we can say no point that have high influence in this model.
+
+# 6. Conclussion
+To make conclion, let’s look at the original two questions:
+
+**1. Is an automatic or manual transmission better for MPG?**
+
+As we can see above from each of all three regression models, manual transmission is clearly better for MPG than automatic transmission.
+
+**2. Quantify the difference between automatic and manual transmissions.**
+
+Our regression models have quantified how much better manual transmission is than automatic transmission by three different amounts:
+
+model 1 = 7.245
+model 2 = 2.52023 
+model 3 = 2.9358
+
+At the modelling analysis we have conclude that we use model 3 as our regression model. Thus we conclude that the differences between manual and automatic transmission is 2.9358
+
+
+# APPENDIX 1
+```{r}
+head(mtcars)
+
+```
+
+# APPENDIX 2
+```{r}
+str(mtcars)
+```
+
+# APPENDIX 3
+
+```{r, echo=TRUE}
+cars <- mtcars %>% mutate(amtext = ifelse(am== 1, 'manual', 'auto'))
+g <- cars %>% ggplot(aes(amtext, mpg)) + 
+      geom_boxplot(aes(group=amtext, fill=amtext)) +
+      ggtitle('MPG and Transmission Boxplot') +
+      xlab('Transmission')
+g
+```
+
+# APPENDIX 4
+
+mpg = Miles/(US) gallon  
+cyl = Number of cylinders  
+disp = Displacement (cu.in.)  
+hp = Gross horsepower  
+drat = Rear axle ratio  
+wt = Weight (1000 lbs)  
+qsec = 1/4 mile time  
+vs = Engine (0 = V-shaped, 1 = straight)  
+am = Transmission (0 = automatic, 1 = manual)  
+gear = Number of forward gears  
+carb = Number of carburetors  
+
+# APPENDIX 5
+
+```{r}
+pairs(mtcars, panel=panel.smooth, main= 'Correlation of All Variables')
+```
+
+# APPENDIX 6
+
+```{r}
+par(mfrow=c(2,2))
+plot(model3)
+```
+
+
+
+
+
+
+
+
+
+
